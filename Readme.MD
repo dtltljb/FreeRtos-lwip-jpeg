@@ -1,114 +1,112 @@
 
-project: ¾ØÕóÑ¹Á¦´«¸ÐÆ÷ÏµÍ³
+project: çŸ©é˜µåŽ‹åŠ›ä¼ æ„Ÿå™¨ç³»ç»Ÿ
 
-@ËµÃ÷: 
-	²Î¿¼¸Ã¹¤³ÌÎÄµµÏÂµÄ"..\project\F407VGT-RTOSV1-lwip-jpeg\F407VGT-RTOSV1-lwip-jpeg.stmx"¹¤³ÌÅäÖÃÎÄ¼þ;
-	Ê¹ÓÃSTM32CubeMX£¨Version 5.2.0£©Ó¦ÓÃÈí¼þ´ò¿ª ´Ë¹¤³ÌÅäÖÃÎÄ¼þ,ÄÚ²¿ÓÐÏêÏ¸ÅäÖÃ²ÎÊý,Éú²ú´úÂëKeil v5 µÄIDE¿ª·¢¹¤³Ì¡£
+@è¯´æ˜Ž: 
+	å‚è€ƒè¯¥å·¥ç¨‹æ–‡æ¡£ä¸‹çš„"..\project\F407VGT-RTOSV1-lwip-jpeg\F407VGT-RTOSV1-lwip-jpeg.stmx"å·¥ç¨‹é…ç½®æ–‡ä»¶;
+	ä½¿ç”¨STM32CubeMXï¼ˆVersion 5.2.0ï¼‰åº”ç”¨è½¯ä»¶æ‰“å¼€ æ­¤å·¥ç¨‹é…ç½®æ–‡ä»¶,å†…éƒ¨æœ‰è¯¦ç»†é…ç½®å‚æ•°,ç”Ÿäº§ä»£ç Keil v5 çš„IDEå¼€å‘å·¥ç¨‹ã€‚
 
-	µÚ1Ìõ£º
-	(1). 	tcp/ipµÄÐÅÏ¢ÅäÖÃ,ÔÚnetif.cÎÄ¼þline 163 ÐÐ,³ÌÐò³õÊ¼»¯IPV4¡¢GW¡¢MASKµÄÐÅÏ¢¡£
-	(2).	FreeRTOSµÄÈ±Ê¡Æô¶¯ÈÎÎñÖÐ,³õÊ¼»¯LIBJPEG¡¢LWIPÁ½²¿·ÖÄÚÈÝ;
+	ç¬¬1æ¡ï¼š
+	(1). 	tcp/ipçš„ä¿¡æ¯é…ç½®,åœ¨netif.cæ–‡ä»¶line 163 è¡Œ,ç¨‹åºåˆå§‹åŒ–IPV4ã€GWã€MASKçš„ä¿¡æ¯ã€‚
+	(2).	FreeRTOSçš„ç¼ºçœå¯åŠ¨ä»»åŠ¡ä¸­,åˆå§‹åŒ–LIBJPEGã€LWIPä¸¤éƒ¨åˆ†å†…å®¹;
 				
 				
-				 void StartDefaultTask(void const * argument)   	/*	FreeRTOSµÄÈ±Ê¡Æô¶¯ÈÎÎñ */
-				 			|	
-							|-->| MX_LWIP_Init();					/* ÒÔÌ«Íø³õÊ¼»¯Â·ÏßÍ¼ */
-									|
-								  |-->	 tcpip_init( NULL, NULL );			/* Initilialize the LwIP stack with RTOS */
-		              |
-							V---|-->	 netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);		/* add the network interface (IPv4/IPv6) with RTOS */
-							|		|
-							|		|-->	 netif_set_default(&gnetif);	  /* Registers the default network interface */
-							|		|
-							|		|-->		netif_set_up(&gnetif);		/* When the netif is fully configured this function must be called */
-							|		|
-							|		|-->	  dhcp_start(&gnetif);			/* Start DHCP negotiation for a network interface (IPv4) */
-							|		
-							|		/*   - initialize all sub modules, - start the tcpip_thread */
-							|		void tcpip_init(tcpip_init_done_fn initfunc, void *arg)
-							|		|
-							|		|-->		 lwip_init();		/*   - initialize all sub modules */
-							|		|
-							|		|-->		 sys_thread_new(TCPIP_THREAD_NAME, tcpip_thread, NULL, TCPIP_THREAD_STACKSIZE, TCPIP_THREAD_PRIO);/*- start the tcpip_thread */
-							|		
-							|		
-							|		void lwip_init(void)
-							|		|
-							|		|-->	  	stats_init();
-							|		|
-							|		|-->		  mem_init();
-							|		|
-							|		|-->		  memp_init();
-							|		|
-							|		|-->			pbuf_init();
-							|		|
-							|		|-->		  netif_init();
-							|		|
-							|		|-->			ip_init();
-							|		|
-							|		|-->			etharp_init();
-							|		|
-							|		|-->			udp_init();
-							|		|
-							|		|-->			tcp_init();
-							|		|
-							|		|-->			dns_init();
-							|		|
-							|		|-->			ppp_init();
-							|		|
-							|		|-->			sys_timeouts_init();
-							|		
-							|		
-							|		
-							|		
-							|-->	netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
-										|
-										|--> err_t ethernetif_init(struct netif *netif)  /* This function should be passed as a parameter to netif_add() */
-											|							
-											|-->	low_level_init(netif);	/* the hardware should be initialized. * Called from ethernetif_init().	*/ /* Init ETH MAC Addr */
-													|					
-													|-->	hal_eth_init_status = HAL_ETH_Init(&heth);  /* @brief  Initializes the Ethernet MAC and DMA according to default   */         parameters.
-														|				
-														|-->	HAL_ETH_MspInit(heth);	/* Init the low level hardware : GPIO, CLOCK, NVIC. */
-														|
-														|-->	HAL_ETH_WritePHYRegister(heth, PHY_BCR, PHY_RESET);		  /* Put the PHY in reset mode */
-														|
-														|-->	ETH_MACDMAConfig(heth, err);    /* Config MAC and DMA */
-														|
-														|-->	HAL_ETH_ReadPHYRegister(heth, PHY_BSR, &phyreg);
-														|
-														|-->	        /* Config MAC and DMA */
+	 void StartDefaultTask(void const * argument)   	/*	FreeRTOSçš„ç¼ºçœå¯åŠ¨ä»»åŠ¡ */
+		|	
+		|-->| MX_LWIP_Init();					/* ä»¥å¤ªç½‘åˆå§‹åŒ–è·¯çº¿å›¾ */
+		|
+		|-->	 tcpip_init( NULL, NULL );			/* Initilialize the LwIP stack with RTOS */
+		|
+	    V---|-->	 netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);		/* add the network interface (IPv4/IPv6) with RTOS */
+		|		|
+		|		|-->	 netif_set_default(&gnetif);	  /* Registers the default network interface */
+		|		|
+		|		|-->		netif_set_up(&gnetif);		/* When the netif is fully configured this function must be called */
+		|		|
+		|		|-->	  dhcp_start(&gnetif);			/* Start DHCP negotiation for a network interface (IPv4) */
+		|		
+		|		/*   - initialize all sub modules, - start the tcpip_thread */
+		|		void tcpip_init(tcpip_init_done_fn initfunc, void *arg)
+		|		|
+		|		|-->		 lwip_init();		/*   - initialize all sub modules */
+		|		|
+		|		|-->		 sys_thread_new(TCPIP_THREAD_NAME, tcpip_thread, NULL, TCPIP_THREAD_STACKSIZE, TCPIP_THREAD_PRIO);/*- start the tcpip_thread */
+		|		
+		|		
+		|		void lwip_init(void)
+		|		|
+		|		|-->	  	stats_init();
+		|		|
+		|		|-->		  mem_init();
+		|		|
+		|		|-->		  memp_init();
+		|		|
+		|		|-->			pbuf_init();
+		|		|
+		|		|-->		  netif_init();
+		|		|
+		|		|-->			ip_init();
+		|		|
+		|		|-->			etharp_init();
+		|		|
+		|		|-->			udp_init();
+		|		|
+		|		|-->			tcp_init();
+		|		|
+		|		|-->			dns_init();
+		|		|
+		|		|-->			ppp_init();
+		|		|
+		|		|-->			sys_timeouts_init();
+		|		
+		|		
+		|		
+		|		
+		|-->	netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
+		|
+		|--> err_t ethernetif_init(struct netif *netif)  /* This function should be passed as a parameter to netif_add() */
+		|							
+		|-->	low_level_init(netif);	/* the hardware should be initialized. * Called from ethernetif_init().	*/ /* Init ETH MAC Addr */
+		|					
+		|-->	hal_eth_init_status = HAL_ETH_Init(&heth);  /* @brief  Initializes the Ethernet MAC and DMA according to default   */         parameters.
+		|				
+		|-->	HAL_ETH_MspInit(heth);	/* Init the low level hardware : GPIO, CLOCK, NVIC. */
+		|
+		|-->	HAL_ETH_WritePHYRegister(heth, PHY_BCR, PHY_RESET);		  /* Put the PHY in reset mode */
+		|
+		|-->	ETH_MACDMAConfig(heth, err);    /* Config MAC and DMA */
+		|
+		|-->	HAL_ETH_ReadPHYRegister(heth, PHY_BSR, &phyreg);
+		|
+		|-->	        /* Config MAC and DMA */
 
-			µÚ 2 Ìõ £º
-				(1).startup select mode 	
-				_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  _  _  _  _  _  _  _  _  _  _  _ _ _  _  _  _  _  _  _  _  _  _ _ 
-				| Boot mode selection pins  |																																			|
-				---------------------------- -------------------	---	---	---	---	---	---	---	---	---	---	---	---	
-				| boot 1 			| boot	0			|  Boot mode       |     Aliasing      																|
-				|   x					|		0					|Main Flash memory |  Main Flash memory is selected as the boot space	|	system selected ,repair sch. 
-				|   0         |   1         |	System memory  	 |	System memory is selected as the boot space     |
-				|   1         |   1         | Embedded SRAM    |  Embedded SRAM is selected as the boot space     |
-				-		-		-		-		-		-		-		-		-		-		-		-		-		-		-		-		-		-		-		-		-		-		-		-		-	-	
-				
-			µÚ 3 Ìõ£º
-			FreeRTOS ²Ù×÷ÏµÍ³ÓÅµã
-			(1).	ÈÎÎñµ÷¶¯Ê±,ÉÏÏÂÎÄÇÐ»»Ê±,ÊÇÓÐÏÞ¶È¹Ø±ÕÖÐ¶ÏÊ¹ÄÜÏÞÖÆ,ÈÃÏµÍ³ÆäËüÖÐ¶Ï¾ßÓÐ¸ü¸ßµÄÊµÊ±ÐÔ¡£configKERNEL_INTERRUPT_PRIORITY Ð¡ÓÚ´ËÖÐ¶ÏºÅµÄÖÐ¶ÏÊ±¿ÉÒÔÖ´ÐÐ¡£
-			(2).  RTOSÈÎÎñÍ¨ÖªÏàµ±ÓÚÖ±½ÓÏòÈÎÎñ·¢ËÍÒ»¸öÊÂ¼þ£¬½ÓÊÕµ½Í¨ÖªµÄÈÎÎñ¿ÉÒÔ½â³ýÈÎÎñµÄ×èÈû×´Ì¬¡£Ïà±ÈÓÚÊ¹ÓÃÐÅºÅÁ¿½â³ýÈÎÎñ×èÈû£¬Ê¹ÓÃÈÎÎñÍ¨Öª¿ÉÒÔ¿ì45% ¡£configUSE_TASK_NOTIFICATIONS = 1 ¡£
+ç¬¬ 2 æ¡ ï¼š
+		(1).startup select mode 	
+		_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  _  _  _  _  _  _  _  _  _  _  _ _ _  _  _  _  _  _  _  _  _  _ _ 
+		| Boot mode selection pins  |									                          |
+		---------------------------- -------------------------	---	------	---	---	---	---	---	---	---	
+		| boot 1 			| boot	0			|  Boot mode       |     Aliasing    			|
+                |   x				|		0		|Main Flash memory |  Main Flash memory is selected as the boot space	|	system selected ,repair sch. 
+		|   0         |   1         |	System memory  	 |	System memory is selected as the boot space     |
+		|   1         |   1         | Embedded SRAM    |  Embedded SRAM is selected as the boot space     |
+		
+ç¬¬ 3 æ¡ï¼š
+FreeRTOS æ“ä½œç³»ç»Ÿä¼˜ç‚¹
+(1).	ä»»åŠ¡è°ƒåŠ¨æ—¶,ä¸Šä¸‹æ–‡åˆ‡æ¢æ—¶,æ˜¯æœ‰é™åº¦å…³é—­ä¸­æ–­ä½¿èƒ½é™åˆ¶,è®©ç³»ç»Ÿå…¶å®ƒä¸­æ–­å…·æœ‰æ›´é«˜çš„å®žæ—¶æ€§ã€‚configKERNEL_INTERRUPT_PRIORITY å°äºŽæ­¤ä¸­æ–­å·çš„ä¸­æ–­æ—¶å¯ä»¥æ‰§è¡Œã€‚
+(2).  RTOSä»»åŠ¡é€šçŸ¥ç›¸å½“äºŽç›´æŽ¥å‘ä»»åŠ¡å‘é€ä¸€ä¸ªäº‹ä»¶ï¼ŒæŽ¥æ”¶åˆ°é€šçŸ¥çš„ä»»åŠ¡å¯ä»¥è§£é™¤ä»»åŠ¡çš„é˜»å¡žçŠ¶æ€ã€‚ç›¸æ¯”äºŽä½¿ç”¨ä¿¡å·é‡è§£é™¤ä»»åŠ¡é˜»å¡žï¼Œä½¿ç”¨ä»»åŠ¡é€šçŸ¥å¯ä»¥å¿«45% ã€‚configUSE_TASK_NOTIFICATIONS = 1 ã€‚
 			
-			µÚ 4 Ìõ: FreeRTOSµÄÖÐ¶ÏÓÅÏÈ¼¶ÅäÖÃ
-				osPriorityIdle					/* ¿ÕÏÐ¼¶±ð,×îµÍÓÅÏÈ¼¶*/			
-				osPriorityLow						/* µÍÓÅÏÈ¼¶*/
-				osPriorityUnderNormal		/* normal under */
-				osPriorityNormal        /* normal */
-				osPriorityAboveNormal		/* normal above */	
-				osPriorityRealtime      /* Realtime ´Ë¼¶±ð³ÌÐò²»²ÎÓëRTOSÏµÍ³µ÷¶¯,ÊáÀíÎïÀí»úÖ±½ÓÖÐ¶Ïµ÷¶¯»úÖÆ*/
-				±¾ÏîÄ¿·½°¸ÖÐDMA´«µÝADC²É¼¯Êý¾Ý,ÊÇ´ËÓÅÏÈ¼¶µÄÈÎÎñ,²Ù×÷ÏµÍ³ÊÇ°´ÕÕÈÎÎñÍ¨Öª·½Ê½µ÷¶¯,Ð§ÂÊÌáÉý40%¡£
+ç¬¬ 4 æ¡: FreeRTOSçš„ä¸­æ–­ä¼˜å…ˆçº§é…ç½®
+	osPriorityIdle					/* ç©ºé—²çº§åˆ«,æœ€ä½Žä¼˜å…ˆçº§*/			
+	osPriorityLow						/* ä½Žä¼˜å…ˆçº§*/
+	osPriorityUnderNormal		/* normal under */
+	osPriorityNormal        /* normal */
+	osPriorityAboveNormal		/* normal above */	
+	osPriorityRealtime      /* Realtime æ­¤çº§åˆ«ç¨‹åºä¸å‚ä¸ŽRTOSç³»ç»Ÿè°ƒåŠ¨,æ¢³ç†ç‰©ç†æœºç›´æŽ¥ä¸­æ–­è°ƒåŠ¨æœºåˆ¶*/
+	æœ¬é¡¹ç›®æ–¹æ¡ˆä¸­DMAä¼ é€’ADCé‡‡é›†æ•°æ®,æ˜¯æ­¤ä¼˜å…ˆçº§çš„ä»»åŠ¡,æ“ä½œç³»ç»Ÿæ˜¯æŒ‰ç…§ä»»åŠ¡é€šçŸ¥æ–¹å¼è°ƒåŠ¨,æ•ˆçŽ‡æå‡40%ã€‚
 				
-			µÚ 5 Ìõ	£ºADC DMA ²ÎÊýÅäÖÃ
+ç¬¬ 5 æ¡	ï¼šADC DMA å‚æ•°é…ç½®
+	 multimode.Mode = ADC_TRIPLEMODE_REGSIMULT;  /* ä¸‰é€šé“è§„åˆ™è½¬æ¢,DMA   */
 			
-			  multimode.Mode = ADC_TRIPLEMODE_REGSIMULT;  /* ÈýÍ¨µÀ¹æÔò×ª»»,DMA   */
-			
-			µÚ 6 Ìõ ÒÔÌ«Íø²ÎÊýÅäÖÃ
+ç¬¬ 6 æ¡ ä»¥å¤ªç½‘å‚æ•°é…ç½®
 				
-				6.1) ÒÔÌ«ÍøÐ¾Æ¬DP83848cvv Ä£Ê½RMII·½Ê½,Íâ²¿ÓÐÔ´50MHz¾§Ìå.
+	6.1) ä»¥å¤ªç½‘èŠ¯ç‰‡DP83848cvv æ¨¡å¼RMIIæ–¹å¼,å¤–éƒ¨æœ‰æº50MHzæ™¶ä½“.
 				
