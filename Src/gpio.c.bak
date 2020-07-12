@@ -1,0 +1,249 @@
+/**
+  ******************************************************************************
+  * File Name          : gpio.c
+  * Description        : This file provides code for the configuration
+  *                      of all used GPIO pins.
+  ******************************************************************************
+  * @attention
+  *
+  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * All rights reserved.</center></h2>
+  *
+  * This software component is licensed by ST under Ultimate Liberty license
+  * SLA0044, the "License"; You may not use this file except in compliance with
+  * the License. You may obtain a copy of the License at:
+  *                             www.st.com/SLA0044
+  *
+  ******************************************************************************
+  */
+
+/* Includes ------------------------------------------------------------------*/
+#include "gpio.h"
+/* USER CODE BEGIN 0 */
+
+/* USER CODE END 0 */
+
+/*----------------------------------------------------------------------------*/
+/* Configure GPIO                                                             */
+/*----------------------------------------------------------------------------*/
+/* USER CODE BEGIN 1 */
+
+/* USER CODE END 1 */
+
+/** Configure pins as 
+        * Analog 
+        * Input 
+        * Output
+        * EVENT_OUT
+        * EXTI
+*/
+void MX_GPIO_Init(void)
+{
+
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, LED2_Pin|LED3_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOE, R_S_1_Pin|R_S_2_Pin|R_S_3_Pin|R_S_4_Pin 
+                          |R_OE_1_Pin|R_OE_2_Pin|R_OE_3_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, H_OUT_Pin|H_OUTD11_Pin|PD12_Pin|PD13_Pin 
+                          |H_S_1_Pin|H_S_2_Pin|H_S_3_Pin|H_S_4_Pin 
+                          |H_EN_1_Pin|H_EN_2_Pin|H_EN_3_Pin|H_EN_4_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PCPin PCPin */
+  GPIO_InitStruct.Pin = LED2_Pin|LED3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PEPin PEPin PEPin PEPin 
+                           PEPin PEPin PEPin */
+  GPIO_InitStruct.Pin = R_S_1_Pin|R_S_2_Pin|R_S_3_Pin|R_S_4_Pin 
+                          |R_OE_1_Pin|R_OE_2_Pin|R_OE_3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PDPin PDPin PDPin PDPin 
+                           PDPin PDPin PDPin PDPin 
+                           PDPin PDPin PDPin PDPin */
+  GPIO_InitStruct.Pin = H_OUT_Pin|H_OUTD11_Pin|PD12_Pin|PD13_Pin 
+                          |H_S_1_Pin|H_S_2_Pin|H_S_3_Pin|H_S_4_Pin 
+                          |H_EN_1_Pin|H_EN_2_Pin|H_EN_3_Pin|H_EN_4_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PDPin PDPin */
+  GPIO_InitStruct.Pin = PD14_Pin|PD15_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+}
+
+/* USER CODE BEGIN 2 */
+
+
+				
+/**
+  * @brief  Reads the specified GPIO output data port.
+  * @param  GPIOx: where x can be (A..K) to select the GPIO peripheral for STM32F405xx/407xx and STM32F415xx/417xx devices
+  *                      x can be (A..I) to select the GPIO peripheral for STM32F42xxx/43xxx devices.
+  *                      x can be (A, B, C, D and H) to select the GPIO peripheral for STM32F401xx devices. 
+  * @retval GPIO output data port value.
+  */
+uint16_t GPIO_ReadOutputData(GPIO_TypeDef* GPIOx)
+{
+  /* Check the parameters */
+  assert_param(IS_GPIO_ALL_PERIPH(GPIOx));
+
+  return ((uint16_t)GPIOx->ODR);
+}
+
+/**
+  * @brief  Writes data to the specified GPIO data port.
+  * @param  GPIOx: where x can be (A..K) to select the GPIO peripheral for STM32F405xx/407xx and STM32F415xx/417xx devices
+  *                      x can be (A..I) to select the GPIO peripheral for STM32F42xxx/43xxx devices.
+  *                      x can be (A, B, C, D and H) to select the GPIO peripheral for STM32F401xx devices. 
+  * @param  PortVal: specifies the value to be written to the port output data register.
+  * @retval None
+  */
+void GPIO_Write(GPIO_TypeDef* GPIOx, uint16_t PortVal)
+{
+  /* Check the parameters */
+  assert_param(IS_GPIO_ALL_PERIPH(GPIOx));
+
+  GPIOx->ODR = PortVal;
+}
+
+/** select matrix x,y dot,use H-EN-1~4,H-OE-1~3 pins  
+        * Input  Parm: uint16_t x,y
+        * Output Para: none zero is error 
+*/
+
+/* PE11~13:R-OE-1~3 */
+#define	R_OE_Number	0x3800
+
+/* PE7~10:R-S-1~4, */
+#define	R_S_Number	0x0380
+
+/* PD4 ~ 7: H-EN-1~4 */
+#define	H_EN_Number	0x00F0
+
+/* PD0 ~ 3 : H-S-0~3  */
+#define	H_S_Number	0x000F
+
+#define		bit3		0x0008
+#define		bit2		0x0004
+
+void swap_bit(uint16_t s)
+{
+	uint16_t sb = s;
+	if (s & bit3){
+			sb |= bit2;
+		}
+	else{
+		sb &=	~bit2;
+	}	
+	if (s & bit2){
+		sb	|= bit3;
+	}
+	else{
+		sb &=	~bit3;
+	}
+}
+
+int8_t	Select_Matrix_Dot(uint16_t x,uint16_t y)
+{
+	uint16_t sl,en,tmp;
+	uint16_t PortVal;
+	if( ( x > Max_X) || (y > Max_Y) )
+		return	-1;
+	x=0;y=0;	//debug	
+/* Y || H*/		
+	PortVal = GPIO_ReadOutputData(GPIOE);
+	PortVal	|=	R_OE_Number;
+	PortVal &=  ~R_S_Number;	
+	
+	if (y > Max_Y )	{
+		return -3;
+	}
+	else
+	{
+
+		if ( y & 0xfffe)
+			tmp	=	y/2 + 1;		
+		else	
+			tmp	= Max_Y - (y/2 + 1);		//even
+		en	= tmp / 16;
+		sl	= tmp % 16;
+		switch(en)
+		{
+			case	0:
+				PortVal &= ~R_OE_1_Pin;
+				break;
+			case	1:
+				PortVal &= ~R_OE_2_Pin;
+				break;	
+			case	2:
+				PortVal &= ~R_OE_3_Pin;
+				break;
+			default:
+				return	-2;
+		}	
+		PortVal |= swap_bit(sl)<<7;		/*repair sch must be delete swap_bit() function*/
+		GPIO_Write(GPIOE,PortVal);	/* Y */
+		}
+
+/* X || V*/		
+	PortVal = GPIO_ReadOutputData(GPIOD);
+	PortVal	|=	H_EN_Number;
+	PortVal &=  ~H_S_Number;
+	if ( x >  Max_X ){
+			return	-3;
+	}
+	else{
+		en	= x / 16;
+		sl	= x % 16;
+		switch(en)
+		{
+			case	0:
+				PortVal &= ~H_EN_1_Pin;
+				break;
+			case	1:
+				PortVal &= ~H_EN_2_Pin;
+				break;	
+			case	2:
+				PortVal &= ~H_EN_3_Pin;
+				break;
+			case	3:
+				PortVal &= ~H_EN_4_Pin;
+				break;				
+			default:
+				return	-2;				
+		}
+		PortVal |= swap_bit(sl);
+		GPIO_Write(GPIOD,PortVal);
+	}
+	return 0;
+}
+
+/* USER CODE END 2 */
+
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

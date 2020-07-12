@@ -1,0 +1,338 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * File Name          : freertos.c
+  * Description        : Code for freertos applications
+  ******************************************************************************
+  * @attention
+  *
+  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * All rights reserved.</center></h2>
+  *
+  * This software component is licensed by ST under Ultimate Liberty license
+  * SLA0044, the "License"; You may not use this file except in compliance with
+  * the License. You may obtain a copy of the License at:
+  *                             www.st.com/SLA0044
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+
+/* Includes ------------------------------------------------------------------*/
+#include "FreeRTOS.h"
+#include "task.h"
+#include "main.h"
+#include "cmsis_os.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */     
+#include "can.h"
+
+#include "gpio.h"
+#include "adc.h"
+
+
+
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* USER CODE BEGIN Variables */
+
+/* USER CODE END Variables */
+osThreadId IdleTaskHandle;
+uint32_t IdleTaskBuffer[ 128 ];
+osStaticThreadDef_t IdleTaskControlBlock;
+osThreadId SampleTaskHandle;
+uint32_t SampleTaskBuffer[ 1024 ];
+osStaticThreadDef_t SampleTaskControlBlock;
+osThreadId ClientTaskHandle;
+uint32_t ClientTaskBuffer[ 1024 ];
+osStaticThreadDef_t ClientTaskControlBlock;
+osThreadId CANopenTaskHandle;
+uint32_t CANopenTaskBuffer[ 512 ];
+osStaticThreadDef_t CANopenTaskControlBlock;
+osThreadId Uart1TaskHandle;
+uint32_t Uart1TaskBuffer[ 256 ];
+osStaticThreadDef_t Uart1TaskControlBlock;
+osMutexId MatrixMutexHandle;
+osStaticMutexDef_t MatrixMutexControlBlock;
+osSemaphoreId MatrixBinarySemHandle;
+osStaticSemaphoreDef_t MatrixBinarySemControlBlock;
+
+/* Private function prototypes -----------------------------------------------*/
+/* USER CODE BEGIN FunctionPrototypes */
+   
+/* USER CODE END FunctionPrototypes */
+
+void StartIdleTask(void const * argument);
+void StartSampleTask(void const * argument);
+void StartClientTask(void const * argument);
+void StartCANopenTask(void const * argument);
+void StartUart1Task(void const * argument);
+
+extern void MX_LWIP_Init(void);
+extern void MX_LIBJPEG_Init(void);
+void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+
+/* GetIdleTaskMemory prototype (linked to static allocation support) */
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+
+/* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
+static StaticTask_t xIdleTaskTCBBuffer;
+static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
+  
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
+{
+  *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
+  *ppxIdleTaskStackBuffer = &xIdleStack[0];
+  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+  /* place for user code */
+}                   
+/* USER CODE END GET_IDLE_TASK_MEMORY */
+
+/**
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
+  /* USER CODE BEGIN Init */
+       
+  /* USER CODE END Init */
+
+  /* Create the mutex(es) */
+  /* definition and creation of MatrixMutex */
+  osMutexStaticDef(MatrixMutex, &MatrixMutexControlBlock);
+  MatrixMutexHandle = osMutexCreate(osMutex(MatrixMutex));
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* Create the semaphores(s) */
+  /* definition and creation of MatrixBinarySem */
+  osSemaphoreStaticDef(MatrixBinarySem, &MatrixBinarySemControlBlock);
+  MatrixBinarySemHandle = osSemaphoreCreate(osSemaphore(MatrixBinarySem), 1);
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* definition and creation of IdleTask */
+  osThreadStaticDef(IdleTask, StartIdleTask, osPriorityLow, 0, 128, IdleTaskBuffer, &IdleTaskControlBlock);
+  IdleTaskHandle = osThreadCreate(osThread(IdleTask), NULL);
+
+  /* definition and creation of SampleTask */
+  osThreadStaticDef(SampleTask, StartSampleTask, osPriorityRealtime, 0, 1024, SampleTaskBuffer, &SampleTaskControlBlock);
+  SampleTaskHandle = osThreadCreate(osThread(SampleTask), NULL);
+
+  /* definition and creation of ClientTask */
+  osThreadStaticDef(ClientTask, StartClientTask, osPriorityNormal, 0, 1024, ClientTaskBuffer, &ClientTaskControlBlock);
+  ClientTaskHandle = osThreadCreate(osThread(ClientTask), NULL);
+
+  /* definition and creation of CANopenTask */
+  osThreadStaticDef(CANopenTask, StartCANopenTask, osPriorityNormal, 0, 512, CANopenTaskBuffer, &CANopenTaskControlBlock);
+  CANopenTaskHandle = osThreadCreate(osThread(CANopenTask), NULL);
+
+  /* definition and creation of Uart1Task */
+  osThreadStaticDef(Uart1Task, StartUart1Task, osPriorityAboveNormal, 0, 256, Uart1TaskBuffer, &Uart1TaskControlBlock);
+  Uart1TaskHandle = osThreadCreate(osThread(Uart1Task), NULL);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+}
+
+/* USER CODE BEGIN Header_StartIdleTask */
+/**
+  * @brief  Function implementing the IdleTask thread.
+  * @param  argument: Not used 
+  * @retval None
+  */
+/* USER CODE END Header_StartIdleTask */
+void StartIdleTask(void const * argument)
+{
+  /* init code for LWIP 
+	 生产的工程文件中,以太网初始化没有成功,待查。
+	*/
+
+//  MX_LWIP_Init();
+
+  /* init code for LIBJPEG */
+  MX_LIBJPEG_Init();
+
+  /* USER CODE BEGIN StartIdleTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(portTICK_PERIOD_MS*1500);
+  }
+  /* USER CODE END StartIdleTask */
+}
+
+/* USER CODE BEGIN Header_StartSampleTask */
+/**
+* @brief Function implementing the SampleTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartSampleTask */
+void StartSampleTask(void const * argument)
+{
+  /* USER CODE BEGIN StartSampleTask */
+  
+   HAL_StatusTypeDef	st;
+
+	// enable DMA request,after last transfer (multi-ADC mode)
+	//note:the process isn't HAL Library context,by author rewrite function.
+  ADC_MultiModeDMARequestAfterLastTransferCmd(ENABLE);
+
+	
+  // enable ADC
+//  ADC_Cmd(hadc1.Instance, ENABLE);  
+//  ADC_Cmd(hadc2.Instance, ENABLE);    
+//  ADC_Cmd(hadc3.Instance, ENABLE); 
+  HAL_ADC_Start(&hadc1);
+  HAL_ADC_Start(&hadc2);
+  HAL_ADC_Start(&hadc3);
+	
+  // pass DMA input para
+	 st	=	HAL_DMA_RegisterCallback(&hdma_adc1, HAL_DMA_XFER_CPLT_CB_ID, ADC_Conv_DMA_XferCpltCallback);
+	 if (st != HAL_OK) 
+	 	{
+	 		Error_Handler();
+	 	}
+	 	
+	// ADC DMA  
+  //ADC_DMACmd( hadc1.Instance , ENABLE);	
+	//start DMA and enbale interrupt, and Enable the selected ADC DMA request 
+	 st	=	HAL_DMA_Start_IT(&hdma_adc1,PERI_ADC_CDR_ADDR, (uint32_t)&ADC_ConvertedValue, DMA_TRANS_SIZE);
+	 if (st != HAL_OK) 
+	 	{
+	 		Error_Handler();
+	 	}
+		
+  //soft startup adc  conveter
+  //ADC_SoftwareStartConv(hadc1.Instance);
+	st	=	HAL_ADC_Start(&hadc1);	
+  if (st != HAL_OK) 
+	 	{
+	 		Error_Handler();
+	 	}
+		
+  /* Infinite loop */
+  
+  for(;;)
+  {
+		if (Sample_Frame_Out == SAMPLE_FRAME_OUT_FLAG)
+			Sample_Frame_Out =	0x0000;
+    osDelay(portTICK_PERIOD_MS*5);
+		Toggle_LED2();
+  }
+  /* USER CODE END StartSampleTask */
+}
+
+/* USER CODE BEGIN Header_StartClientTask */
+/**
+* @brief Function implementing the ClientTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartClientTask */
+void StartClientTask(void const * argument)
+{
+  /* USER CODE BEGIN StartClientTask */
+  /* Infinite loop */
+  for(;;)
+  {
+  	Toggle_LED3();
+    osDelay(portTICK_PERIOD_MS*1000);
+  }
+  /* USER CODE END StartClientTask */
+}
+
+/* USER CODE BEGIN Header_StartCANopenTask */
+/**
+* @brief Function implementing the CANopenTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartCANopenTask */
+void StartCANopenTask(void const * argument)
+{
+  /* USER CODE BEGIN StartCANopenTask */
+  uint32_t		Use_Tx_Box;
+  CAN_TxHeaderTypeDef		tMsg;
+	CAN_RxHeaderTypeDef 	rMsg;
+	Init_RxMes(&rMsg);
+	
+  HAL_StatusTypeDef	st;
+	st	=	HAL_CAN_Start(&hcan2);
+	if (st != HAL_OK) 
+	 	{
+	 		Error_Handler();
+	 	}	
+  /* Infinite loop */
+  for(;;)
+  {
+		//Toggle_LED2();
+    osDelay(portTICK_PERIOD_MS*500);
+    if ( CAN_RxFlag == Request ){
+    	CAN_RxFlag	=	0;
+    	CAN_SetMsg(&tMsg);
+    	HAL_CAN_AddTxMessage(&hcan2, &tMsg,CAN_Rx_Data,CAN_TX_MAILBOX0);
+    }
+    
+  }
+  /* USER CODE END StartCANopenTask */
+}
+
+/* USER CODE BEGIN Header_StartUart1Task */
+/**
+* @brief Function implementing the Uart1Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartUart1Task */
+void StartUart1Task(void const * argument)
+{
+  /* USER CODE BEGIN StartUart1Task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(100*portTICK_PERIOD_MS);
+  }
+  /* USER CODE END StartUart1Task */
+}
+
+/* Private application code --------------------------------------------------*/
+/* USER CODE BEGIN Application */
+     
+/* USER CODE END Application */
+
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
