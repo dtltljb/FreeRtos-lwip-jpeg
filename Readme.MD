@@ -1,5 +1,5 @@
 
-project: 矩阵压力传感器系统
+project: 基于FreeRTOS的矩阵压力数据高频2MHz采集速率,通过socket把数据传递给客户端。
 
 @说明: 
 	参考该工程文档下的"..\project\F407VGT-RTOSV1-lwip-jpeg\F407VGT-RTOSV1-lwip-jpeg.stmx"工程配置文件;
